@@ -1,0 +1,49 @@
+name: BaseinfraModules-Terraform-CI
+
+parameters:
+- name: moduleList
+  type: object
+  default:
+    - user-identities
+    - agent-pool
+    - agps-subnet
+    - gateway
+    - aks
+    - runner-vmss
+    - keyvault
+    - keyvault-subnets
+    - bastion
+    - network-infra
+    - front-ip
+    - analytics-workspace
+    - acr
+    - rbac
+- name: initCommandOptions
+  type: string
+  default: ' '
+
+resources:
+  repositories:
+    - repository: terraform_steerin_pipeline_templates
+      type: git
+      name: terraform-steerin-pipeline-templates
+      ref: main
+
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  - template: tf/template-common-variables.yml@terraform_steerin_pipeline_templates
+
+stages:
+- ${{ each module in parameters.moduleList }}:
+  - template: tf/template-ci-stage.yml@terraform_steerin_pipeline_templates  
+    parameters:
+      initCommandOptions: ${{ parameters.initCommandOptions }}
+      moduleName: ${{ module }}
+      backendAzureRmKey: 'ci/baseinfra/${{ module }}/terraform.tfstate'
